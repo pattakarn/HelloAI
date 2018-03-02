@@ -74,6 +74,8 @@ public class TextSpeechAPI extends UtteranceProgressListener implements TextToSp
         if (locale != null) {
             tts.setLanguage(locale);
         }
+//        tts.setPitch(5);
+//        tts.setSpeechRate(3);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             tts.speak(message, TextToSpeech.QUEUE_FLUSH, null, "");
@@ -82,7 +84,7 @@ public class TextSpeechAPI extends UtteranceProgressListener implements TextToSp
         }
     }
 
-    private void clear() {
+    public void clear() {
         speakCount--;
 
         if (speakCount == 0) {

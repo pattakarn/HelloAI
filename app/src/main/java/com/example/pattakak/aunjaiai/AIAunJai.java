@@ -27,12 +27,14 @@ public class AIAunJai {
 
     Context context;
     LayoutInflater inflater;
+    TextSpeechAPI textSpeech;
 
     private String state = "standby";
 
     public AIAunJai(Context context) {
         this.context = context;
         inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        textSpeech = TextSpeechAPI.getInstance(context);
     }
 
     public Boolean checkAunjai(String text) {
@@ -42,6 +44,10 @@ public class AIAunJai {
             checkLight(text);
         }
         return check;
+    }
+
+    public void stopTTS(){
+        textSpeech.clear();
     }
 
     public Boolean checkLight(String text) {
@@ -182,8 +188,7 @@ public class AIAunJai {
                             text = "ตอนนี้ไฟหน้าบ้านปิดอยู่คะ";
                         }
                     }
-                    TextSpeechAPI.getInstance(context)
-                            .speak(text);
+                    textSpeech.speak(text);
                 }
 
                 @Override
@@ -240,8 +245,7 @@ public class AIAunJai {
                     text += response.body().getItems().get(i).getDescription() + "\n\n";
                 }
 //                returnedText.setText(text);
-                TextSpeechAPI.getInstance(context)
-                        .speak(text);
+                textSpeech.speak(text);
 
             }
 
@@ -258,48 +262,39 @@ public class AIAunJai {
 
     public void checkShow() {
         if (state.equals("standby")) {
-            TextSpeechAPI.getInstance(context)
-                    .speak("มีอะไรให้อุ่นใจช่วยคะ");
+            textSpeech.speak("มีอะไรให้อุ่นใจช่วยคะ");
             state = "command";
         } else if (state.equals("command-open")) {
             setLight(true);
-            TextSpeechAPI.getInstance(context)
-                    .speak("เปิดไฟเรียบร้อยคะ");
+            textSpeech.speak("เปิดไฟเรียบร้อยคะ");
             state = "standby";
         } else if (state.equals("command-close")) {
             setLight(false);
-            TextSpeechAPI.getInstance(context)
-                    .speak("ปิดไฟเรียบร้อยคะ");
+            textSpeech.speak("ปิดไฟเรียบร้อยคะ");
             state = "standby";
         } else if (state.equals("command-open-bedroom")) {
             setLight(true);
-            TextSpeechAPI.getInstance(context)
-                    .speak("เปิดไฟห้องนอนเรียบร้อยคะ");
+            textSpeech.speak("เปิดไฟห้องนอนเรียบร้อยคะ");
             state = "standby";
         } else if (state.equals("command-close-bedroom")) {
             setLight(false);
-            TextSpeechAPI.getInstance(context)
-                    .speak("ปิดไฟห้องนอนเรียบร้อยคะ");
+            textSpeech.speak("ปิดไฟห้องนอนเรียบร้อยคะ");
             state = "standby";
         } else if (state.equals("command-open-livingroom")) {
             setLight(true);
-            TextSpeechAPI.getInstance(context)
-                    .speak("เปิดไฟห้องนั่งเล่นเรียบร้อยคะ");
+            textSpeech.speak("เปิดไฟห้องนั่งเล่นเรียบร้อยคะ");
             state = "standby";
         } else if (state.equals("command-close-livingroom")) {
             setLight(false);
-            TextSpeechAPI.getInstance(context)
-                    .speak("ปิดไฟห้องนั่งเล่นเรียบร้อยคะ");
+            textSpeech.speak("ปิดไฟห้องนั่งเล่นเรียบร้อยคะ");
             state = "standby";
         } else if (state.equals("command-status-fronthome")) {
             setLight(true);
-            TextSpeechAPI.getInstance(context)
-                    .speak("ไฟหน้าบ้านเปิดอยู่คะ");
+            textSpeech.speak("ไฟหน้าบ้านเปิดอยู่คะ");
             state = "standby";
         } else if (state.equals("command-status-fronthome")) {
             setLight(false);
-            TextSpeechAPI.getInstance(context)
-                    .speak("ไฟหน้าบ้านปิดอยู่คะ");
+            textSpeech.speak("ไฟหน้าบ้านปิดอยู่คะ");
             state = "standby";
         } else if (state.matches("(.*)command-status(.*)")) {
             StatusLight();
@@ -309,8 +304,7 @@ public class AIAunJai {
             state = "standby";
 //            timer = 60000;
         } else if (state.equals("command")) {
-            TextSpeechAPI.getInstance(context)
-                    .speak("แล้วเจอกันใหม่นะคะ");
+            textSpeech.speak("แล้วเจอกันใหม่นะคะ");
             state = "standby";
         }
     }
@@ -472,8 +466,7 @@ public class AIAunJai {
                             newWord = speech.replace(word, "ปิด");
                         }
                         Log.i("newWord", "+++++++++++++++++++++++++++ " + newWord);
-                        TextSpeechAPI.getInstance(context)
-                                .speak(newWord);
+                        textSpeech.speak(newWord);
                     }
                 }
 

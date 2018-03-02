@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
+import android.media.AudioManager;
 import android.os.AsyncTask;
 import android.os.CountDownTimer;
 import android.speech.RecognitionListener;
@@ -36,6 +37,7 @@ import ai.api.model.AIRequest;
 import ai.api.model.AIResponse;
 import ai.api.model.Metadata;
 import ai.api.model.Result;
+import ai.api.model.Status;
 import okhttp3.OkHttpClient;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -55,12 +57,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private String LOG_TAG = "VoiceRecognitionActivity";
     private String state = "standby";
     private Boolean statusSpeech = false;
+    private Boolean speak = false;
     private int timer = 2000;
     private Button btnNext;
     Context context;
 
     private AIAunJai aunJai;
     AIDataService aiDataService;
+    TextSpeechAPI textSpeech;
+    CountDownTimer countDownTimer;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -74,6 +80,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         context = MainActivity.this;
 
         progressBar.setVisibility(View.INVISIBLE);
+        textSpeech = TextSpeechAPI.getInstance(context);
+
         createSpeech();
 
         final AIConfiguration config = new AIConfiguration("decb05094e7f4dbf9be0b79ccf23cb68",
@@ -258,6 +266,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             protected void onPostExecute(AIResponse aiResponse) {
                 if (aiResponse != null) {
+                    Unmute();
                     // process aiResponse here
                     Log.i(TAG, "onPostExecute: ================================");
                     Result result = aiResponse.getResult();
@@ -265,7 +274,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     Log.i(TAG, "onPostExecute Resolved query: " + result.getResolvedQuery());
                     Log.i(TAG, "onPostExecute Action: " + result.getAction());
 
-                    String speech = result.getFulfillment().getSpeech();
+                    final String speech = result.getFulfillment().getSpeech();
                     Log.i(TAG, "onPostExecute: " + speech);
 
                     Metadata metadata = result.getMetadata();
@@ -282,23 +291,29 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         }
                     }
 
+
                     String checkStatus = aunJai.AICheckLight(metadata.getIntentName(), speech);
+
                     returnedText.setText(speech);
                     if (checkStatus.equals("1")) {
+                        Log.i(TAG, "Speak: ================================ Speak");
                         TextSpeechAPI.getInstance(context).speak(speech);
                         timer = 2000;
-                    } if (checkStatus.equals("0")) {
+                    }
+                    if (checkStatus.equals("0")) {
                         timer = 2000;
-                    } else if (checkStatus.equals("60000")){
+                    } else if (checkStatus.equals("60000")) {
                         timer = 60000;
+                        speak = true;
                     } else {
                         TextSpeechAPI.getInstance(context).speak(speech);
                         timer = 2000;
                     }
 
-                    new CountDownTimer(timer, 1000) {
+                    countDownTimer = new CountDownTimer(timer, 1000) {
                         public void onTick(long millisUntilFinished) {
 //                mTextField.setText("seconds remaining: " + millisUntilFinished / 1000);
+
                         }
 
                         public void onFinish() {
@@ -440,6 +455,26 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 //        }
 //    }
 
+    public void Mute() {
+        Log.d("Mute", "++++++++++++++++++++++++++++++++++++++++++++++++");
+        AudioManager amanager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        amanager.setStreamMute(AudioManager.STREAM_NOTIFICATION, true);
+        amanager.setStreamMute(AudioManager.STREAM_ALARM, true);
+        amanager.setStreamMute(AudioManager.STREAM_MUSIC, true);
+        amanager.setStreamMute(AudioManager.STREAM_RING, true);
+        amanager.setStreamMute(AudioManager.STREAM_SYSTEM, true);
+    }
+
+    public void Unmute() {
+        Log.d("Unmute", "++++++++++++++++++++++++++++++++++++++++++++++++");
+        AudioManager amanager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        amanager.setStreamMute(AudioManager.STREAM_NOTIFICATION, false);
+        amanager.setStreamMute(AudioManager.STREAM_ALARM, false);
+        amanager.setStreamMute(AudioManager.STREAM_MUSIC, false);
+        amanager.setStreamMute(AudioManager.STREAM_RING, false);
+        amanager.setStreamMute(AudioManager.STREAM_SYSTEM, false);
+    }
+
     @Override
     public void onRmsChanged(float rmsdB) {
         Log.i(LOG_TAG, "onRmsChanged: " + rmsdB);
@@ -580,6 +615,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void setChange(Boolean isChecked) {
         Log.d("CheckChange", "+++++++++++++" + isChecked);
         if (isChecked) {
+            Mute();
             statusSpeech = true;
             createSpeech();
             progressBar.setVisibility(View.VISIBLE);
@@ -594,6 +630,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             progressBar.setIndeterminate(false);
             progressBar.setVisibility(View.INVISIBLE);
             speech.stopListening();
+
         }
     }
 
@@ -614,16 +651,32 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.fab:
-                if (statusSpeech) {
+                if (speak) {
+                    setChange(false);
+                    speak = false;
+                    speech.destroy();
+                    btnFab.setImageResource(R.drawable.ic_mic_white);
+                    btnFab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.colorPrimary)));
+                    Log.i(LOG_TAG, "Click Speak: ===============================================");
+                    countDownTimer.cancel();
+                    aunJai.stopTTS();
+//                    aunJai.stopTTS();
+                } else if (statusSpeech) {
+                    aunJai.stopTTS();
                     speech.destroy();
                     setChange(false);
                     btnFab.setImageResource(R.drawable.ic_mic_white);
                     btnFab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.colorPrimary)));
+                    Log.i(LOG_TAG, "Click status 1: ==========================================");
 
                 } else {
                     setChange(true);
                     btnFab.setImageResource(R.drawable.ic_stop_white);
                     btnFab.setBackgroundTintList(ColorStateList.valueOf(Color.RED));
+//                    aunJai.stopTTS();
+                    Log.i(LOG_TAG, "onBufferReceived: ========================================");
+
+
                 }
 //                checkNEWS();
                 break;
@@ -632,6 +685,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 //                getDialog();
                 break;
         }
+
     }
 
     public void getDialog() {
